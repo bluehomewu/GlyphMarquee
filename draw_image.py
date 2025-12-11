@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 
-def create_centered_original_style_preview():
+def create_final_original_style_hardware_preview():
     size = 512
     # 建立透明背景
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
@@ -10,56 +10,72 @@ def create_centered_original_style_preview():
     draw = ImageDraw.Draw(content_layer)
 
     # 1. 畫出圓形黑色底
-    margin = 2
-    draw.ellipse((margin, margin, size-margin, size-margin), fill=(15, 15, 15, 255))
+    draw.ellipse((0, 0, size, size), fill=(10, 10, 10, 255))
 
-    # 2. 繪製點陣 (15x15 網格)
-    rows, cols = 15, 15
-    padding = 60 
-    
-    cell_w = (size - 2 * padding) / cols
-    cell_h = (size - 2 * padding) / rows
-    dot_radius = cell_w * 0.35
+    # 2. 設定硬體規格: 25x25 Grid
+    hw_rows, hw_cols = 25, 25
+    padding = 20 
+    cell_w = (size - 2 * padding) / hw_cols
+    cell_h = (size - 2 * padding) / hw_rows
+    # 調整燈珠大小：因為圖案比較細緻，燈珠稍微縮小一點點以呈現間隙感，會更像真實的 Nothing Phone
+    dot_radius = cell_w * 0.38 
 
-    # 3. 定義圖案 (原本的風格，但整體向左平移 1 格)
-    # 原本最長的一排是 index 3~13 (中心在 8)，現在改為 2~12 (中心在 7)
-    pattern = [
+    # 硬體中心
+    center_idx = 12 
+    radius_threshold = 12.5
+
+    # 3. 定義 "原本風格" 的雙箭頭圖案 (15x15)
+    # 這就是你覺得比較好看的那個版本 (Row 7 滿版置中)
+    pattern_15x15 = [
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], # Row 4: 移至 5, 9
-        [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0], # Row 5: 移至 4,5, 9,10
-        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0], # Row 6: 移至 3~11
-        [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0], # Row 7 (中心): 移至 2~12 (長度11，中心為7) -> 完美置中
-        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0], # Row 8: 移至 3~11
-        [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0], # Row 9: 移至 4,5, 9,10
-        [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], # Row 10: 移至 5, 9
+        [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], # Row 4
+        [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0], # Row 5
+        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0], # Row 6
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0], # Row 7 (中心)
+        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0], # Row 8
+        [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0], # Row 9
+        [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], # Row 10
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
 
-    for r in range(rows):
-        for c in range(cols):
+    # 計算偏移量：將 15x15 放在 25x25 的正中間
+    # (25 - 15) / 2 = 5
+    offset = 5
+
+    for r in range(hw_rows):
+        for c in range(hw_cols):
+            # 計算物理座標
             cx = padding + c * cell_w + cell_w / 2
             cy = padding + r * cell_h + cell_h / 2
             
-            # 圓形範圍檢查
-            dist_center = ((cx - size/2)**2 + (cy - size/2)**2)**0.5
-            if dist_center > (size/2 - margin):
-                continue
+            # 判斷是否在硬體圓形有效範圍內
+            dist_grid = ((r - center_idx)**2 + (c - center_idx)**2)**0.5
             
-            # 取得圖案點
-            is_lit = pattern[r][c] == 1 if r < len(pattern) and c < len(pattern[0]) else False
+            if dist_grid > radius_threshold:
+                continue 
+
+            # 判斷亮燈
+            is_lit = False
+            # 轉換到 pattern 座標
+            pr = r - offset
+            pc = c - offset
             
+            if 0 <= pr < 15 and 0 <= pc < 15:
+                if pattern_15x15[pr][pc] == 1:
+                    is_lit = True
+
             if is_lit:
                 # 亮燈：純白
                 draw.ellipse([cx - dot_radius, cy - dot_radius, cx + dot_radius, cy + dot_radius], fill=(255, 255, 255, 255))
             else:
-                # 滅燈：深灰色
-                draw.ellipse([cx - dot_radius * 0.8, cy - dot_radius * 0.8, cx + dot_radius * 0.8, cy + dot_radius * 0.8], fill=(45, 45, 45, 255))
+                # 滅燈：深灰色 (模擬真實存在的燈珠)
+                draw.ellipse([cx - dot_radius * 0.85, cy - dot_radius * 0.85, cx + dot_radius * 0.85, cy + dot_radius * 0.85], fill=(35, 35, 35, 255))
 
     # 4. 圓形裁切
     mask = Image.new('L', (size, size), 0)
@@ -73,5 +89,5 @@ def create_centered_original_style_preview():
     final_img.save(filename)
     return filename
 
-file_path = create_centered_original_style_preview()
+file_path = create_final_original_style_hardware_preview()
 print(f"Image saved to {file_path}")
