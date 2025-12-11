@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 1. 權限 (必要) -->
+    <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GlyphMarquee"
+        >
+
+        <!-- ========================================================= -->
+        <!-- ⚠️ 關鍵修正: API Key 必須放在這裡 (Application 的直屬子項目) -->
+        <!-- ========================================================= -->
+        <meta-data
+            android:name="NothingKey"
+            android:value="test" />
+        <!-- ========================================================= -->
+
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 玩具服務 -->
+        <service
+            android:name=".MarqueeService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="com.nothing.ketchum.permission.BIND_GLYPH_TOY">
+
+            <!-- 玩具識別 Action -->
+            <intent-filter>
+                <action android:name="com.nothing.glyph.TOY"/>
+            </intent-filter>
+
+            <!-- 玩具名稱 -->
+            <meta-data
+                android:name="com.nothing.glyph.toy.name"
+                android:resource="@string/app_name"/>
+
+            <!-- 玩具預覽圖 -->
+            <meta-data
+                android:name="com.nothing.glyph.toy.image"
+                android:resource="@drawable/toy_preview"/>
+
+        </service>
+
+    </application>
+
+</manifest>
