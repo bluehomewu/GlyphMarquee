@@ -9,12 +9,16 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.Message
+import android.os.Messenger
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphToy
 
 class MarqueeService : Service() {
 
@@ -32,8 +36,28 @@ class MarqueeService : Service() {
     private lateinit var textBitmap: Bitmap
     private val lock = Any()
 
-    // 增加一個標記，確認是否被系統選中 (Bound)
     private var isBoundBySystem = false
+
+    // AOD 訊息處理器
+    private val serviceHandler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            val msgWhat = try { GlyphToy.MSG_GLYPH_TOY } catch (e: Exception) { 1 }
+
+            if (msg.what == msgWhat) {
+                val bundle = msg.data
+                val key = try { GlyphToy.MSG_GLYPH_TOY_DATA } catch (e: Exception) { "glyph_toy_data" }
+                val event = bundle.getString(key)
+                val aodEvent = try { GlyphToy.EVENT_AOD } catch (e: Exception) { "aod" }
+
+                if (aodEvent == event) {
+                    Log.d(TAG, "Received AOD Event - Triggering Animation")
+                    triggerAodAnimation()
+                }
+            }
+            super.handleMessage(msg)
+        }
+    }
+    private val serviceMessenger = Messenger(serviceHandler)
 
     private val callback = object : GlyphMatrixManager.Callback {
         override fun onServiceConnected(componentName: ComponentName) {
@@ -42,17 +66,11 @@ class MarqueeService : Service() {
                 try {
                     glyphManager.register("23112")
                     Thread.sleep(100)
-
-                    // 連線成功，載入設定
                     loadSettings()
 
-                    // 只有當「系統選中我們」或是「APP正在設定」時才開始跑
-                    // 但為了避免 Bug，這裡我們先不強制 Start，
-                    // 而是交給 onBind/onRebind 來觸發，或者如果已經 Bound 就開始
                     if (isBoundBySystem) {
                         handler.post { startMarquee() }
                     }
-
                 } catch (e: Exception) {
                     Log.e(TAG, "Registration Error", e)
                 }
@@ -76,50 +94,32 @@ class MarqueeService : Service() {
         }
     }
 
-    // =========================================================
-    // ⚠️ 關鍵修正：生命週期管理 (Lifecycle Management)
-    // =========================================================
-
-    // 1. 當使用者透過按鈕選中這個 Toy 時，系統會呼叫 onBind
     override fun onBind(intent: Intent?): IBinder? {
-        Log.d(TAG, "System Bound to Service (Toy Selected)")
+        Log.d(TAG, "System Bound (Toy Selected / AOD Active)")
         isBoundBySystem = true
         startMarquee()
-        return null
+        return serviceMessenger.binder
     }
 
-    // 2. 當使用者切換到別的 Toy 時，系統會呼叫 onUnbind
     override fun onUnbind(intent: Intent?): Boolean {
-        Log.d(TAG, "System Unbound (Toy Deselected)")
+        Log.d(TAG, "System Unbound")
         isBoundBySystem = false
-
-        // 立刻停止迴圈
         stopMarquee()
-
-        // 熄燈 (避免殘留影像)
         turnOffLights()
-
-        // 回傳 true，這樣下次切換回來時才會呼叫 onRebind
         return true
     }
 
-    // 3. 當使用者再次切換回來時
     override fun onRebind(intent: Intent?) {
-        Log.d(TAG, "System Rebound (Toy Selected Again)")
+        Log.d(TAG, "System Rebound")
         isBoundBySystem = true
         startMarquee()
         super.onRebind(intent)
     }
 
-    // =========================================================
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "UPDATE_CONFIG") {
-            Log.d(TAG, "Received Update Command")
+            Log.d(TAG, "Config Updated")
             loadSettings()
-
-            // 如果使用者正在 APP 裡按「套用」，即使沒選中 Toy，我們也讓他預覽一下
-            // 但如果不想干擾其他 Toy，可以把下面這行拿掉
             if (!isRunning && isBoundBySystem) {
                 startMarquee()
             }
@@ -181,11 +181,23 @@ class MarqueeService : Service() {
         canvas.drawText(textToScroll, finalWidth.toFloat(), yPos, paint)
     }
 
+    // ==========================================
+    // ⚠️ 修改：移除時間限制的 AOD 邏輯
+    // ==========================================
+    private fun triggerAodAnimation() {
+        // 先停止目前的，確保狀態重置
+        stopMarquee()
+
+        Log.d(TAG, "Starting AOD Sequence (Continuous Mode)")
+
+        // 直接啟動，不再設定 postDelayed 來關閉它
+        isRunning = true
+        handler.post(marqueeRunnable)
+    }
+
     private val marqueeRunnable = object : Runnable {
         override fun run() {
-            // 雙重保險：如果沒被選中，就不要跑 (除非你在 Debug)
             if (!isRunning) return
-            // if (!isBoundBySystem) return // 加上這行可以更嚴格防止干擾，但會導致 APP 內預覽失效
 
             try {
                 synchronized(lock) {
@@ -226,12 +238,10 @@ class MarqueeService : Service() {
     }
 
     private fun startMarquee() {
-        // 只有在還沒跑的時候才啟動，避免重複 Runnable
         if (!isRunning) {
             isRunning = true
-            handler.removeCallbacks(marqueeRunnable) // 先清掉舊的
+            handler.removeCallbacks(marqueeRunnable)
             handler.post(marqueeRunnable)
-            Log.d(TAG, "Marquee Started")
         }
     }
 
@@ -239,7 +249,6 @@ class MarqueeService : Service() {
         if (isRunning) {
             isRunning = false
             handler.removeCallbacks(marqueeRunnable)
-            Log.d(TAG, "Marquee Stopped")
         }
     }
 }

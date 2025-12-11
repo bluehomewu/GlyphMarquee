@@ -41,20 +41,24 @@
             android:exported="true"
             android:permission="com.nothing.ketchum.permission.BIND_GLYPH_TOY">
 
-            <!-- 玩具識別 Action -->
             <intent-filter>
                 <action android:name="com.nothing.glyph.TOY"/>
             </intent-filter>
 
-            <!-- 玩具名稱 -->
             <meta-data
                 android:name="com.nothing.glyph.toy.name"
                 android:resource="@string/app_name"/>
 
-            <!-- 玩具預覽圖 -->
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
                 android:resource="@drawable/toy_preview"/>
+
+            <!-- ========================================== -->
+            <!-- ⚠️ 新增：宣告支援 AOD (數值為 1 代表開啟) -->
+            <!-- ========================================== -->
+            <meta-data
+                android:name="com.nothing.glyph.toy.aod_support"
+                android:value="1"/>
 
         </service>
 
