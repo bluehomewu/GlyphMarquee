@@ -2,6 +2,7 @@ package tw.bluehomewu.glyphmarquee
 
 import android.app.Service
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -22,25 +23,27 @@ class MarqueeService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val TAG = "NothingToy"
 
-    // 你可以隨意修改這裡的文字
-    private val textToScroll = " HELLO NOTHING (3) "
+    // 設定變數
+    private var textToScroll = " HELLO NOTHING (3) "
+    private var updateSpeed = 100L
+    private var brightness = 255 // 新增亮度變數，預設最亮
+
     private var scrollX = 0
     private lateinit var textBitmap: Bitmap
+    private val lock = Any()
 
     private val callback = object : GlyphMatrixManager.Callback {
         override fun onServiceConnected(componentName: ComponentName) {
             Log.d(TAG, "Glyph Matrix Service Connected")
             Thread {
                 try {
-                    // 1. 註冊 (Phone 3 Device ID)
                     glyphManager.register("23112")
-
-                    // 2. 緩衝一下，確保註冊狀態同步
                     Thread.sleep(100)
 
-                    // 3. 開始跑馬燈
-                    handler.post { startMarquee() }
+                    // 連線後載入設定
+                    loadSettings()
 
+                    handler.post { startMarquee() }
                 } catch (e: Exception) {
                     Log.e(TAG, "Registration Error", e)
                 }
@@ -58,19 +61,38 @@ class MarqueeService : Service() {
         try {
             glyphManager = GlyphMatrixManager.getInstance(applicationContext)
             glyphManager.init(callback)
-            prepareTextBitmap()
+            loadSettings()
         } catch (e: Exception) {
             Log.e(TAG, "Init failed", e)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "UPDATE_CONFIG") {
+            Log.d(TAG, "Received Update Command")
+            loadSettings()
+        }
+        return START_STICKY
+    }
+
+    private fun loadSettings() {
+        val prefs = getSharedPreferences("MarqueePrefs", Context.MODE_PRIVATE)
+        textToScroll = prefs.getString("text", " HELLO NOTHING (3) ") ?: " ERROR "
+        updateSpeed = prefs.getInt("speed", 100).toLong()
+        // 讀取亮度
+        brightness = prefs.getInt("brightness", 255)
+
+        synchronized(lock) {
+            scrollX = 0
+            prepareTextBitmap()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         try {
-            // 退出時，送出全黑畫面來熄燈
             val blackFrame = IntArray(625) { 0 }
             glyphManager.setMatrixFrame(blackFrame)
-
             glyphManager.unInit()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -83,7 +105,7 @@ class MarqueeService : Service() {
     private fun prepareTextBitmap() {
         val paint = Paint().apply {
             color = Color.WHITE
-            textSize = 20f // 字體大小
+            textSize = 20f
             isAntiAlias = true
             typeface = Typeface.DEFAULT_BOLD
             textAlign = Paint.Align.LEFT
@@ -91,16 +113,17 @@ class MarqueeService : Service() {
 
         val textWidth = paint.measureText(textToScroll).toInt()
         val height = 25
+        val finalWidth = if (textWidth > 0) textWidth else 50
 
-        // 建立兩倍寬度的圖片以便循環
-        textBitmap = Bitmap.createBitmap(textWidth * 2 + 50, height, Bitmap.Config.ARGB_8888)
+        textBitmap = Bitmap.createBitmap(finalWidth * 2 + 50, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(textBitmap)
         canvas.drawColor(Color.BLACK)
 
-        // 垂直置中計算
         val yPos = (height / 2f) - ((paint.descent() + paint.ascent()) / 2f)
         canvas.drawText(textToScroll, 0f, yPos, paint)
-        canvas.drawText(textToScroll, textWidth.toFloat(), yPos, paint)
+        canvas.drawText(textToScroll, finalWidth.toFloat(), yPos, paint)
+
+        Log.d(TAG, "Updated: Text='$textToScroll', Speed=$updateSpeed, Brightness=$brightness")
     }
 
     private val marqueeRunnable = object : Runnable {
@@ -108,38 +131,38 @@ class MarqueeService : Service() {
             if (!isRunning) return
 
             try {
-                val matrixData = IntArray(625)
+                synchronized(lock) {
+                    if (::textBitmap.isInitialized) {
+                        val matrixData = IntArray(625)
 
-                for (y in 0 until 25) {
-                    for (x in 0 until 25) {
-                        val targetX = (scrollX + x) % (textBitmap.width / 2)
+                        for (y in 0 until 25) {
+                            for (x in 0 until 25) {
+                                val targetX = (scrollX + x) % (textBitmap.width / 2)
 
-                        if (targetX < textBitmap.width) {
-                            val pixel = textBitmap.getPixel(targetX, y)
+                                if (targetX < textBitmap.width) {
+                                    val pixel = textBitmap.getPixel(targetX, y)
 
-                            // === 亮度設定 ===
-                            // 嚴格設定為 SDK 規範的 255 (最大亮度)
-                            // 只要有些微像素存在，就全亮，確保字體清晰
-                            val brightness = if (Color.red(pixel) > 50) 255 else 0
+                                    // === 亮度套用 ===
+                                    // 判斷是否有點，如果有，就使用使用者設定的亮度變數
+                                    val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
 
-                            matrixData[y * 25 + x] = brightness
+                                    matrixData[y * 25 + x] = pixelBrightness
+                                }
+                            }
                         }
+
+                        val frame = GlyphMatrixFrame.Builder()
+                            .addTop(matrixData)
+                            .build(applicationContext)
+
+                        glyphManager.setMatrixFrame(frame)
+
+                        scrollX += 1
+                        if (scrollX >= textBitmap.width / 2) scrollX = 0
                     }
                 }
 
-                // 建構並送出畫面
-                val frame = GlyphMatrixFrame.Builder()
-                    .addTop(matrixData)
-                    .build(applicationContext)
-
-                glyphManager.setMatrixFrame(frame)
-
-                // 移動位置
-                scrollX += 1
-                if (scrollX >= textBitmap.width / 2) scrollX = 0
-
-                // 設定 FPS (目前 100ms = 10fps，如果要跑快一點可以改成 50)
-                handler.postDelayed(this, 100)
+                handler.postDelayed(this, updateSpeed)
 
             } catch (e: Exception) {
                 Log.e(TAG, "Animation Error: ${e.message}")

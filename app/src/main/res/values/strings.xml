@@ -1,3 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">GlyphMarquee</string>
+
+    <!-- UI Strings -->
+    <string name="editor_title">Glyph Marquee Editor</string>
+    <string name="input_hint">Enter text here</string>
+    <string name="default_marquee_text">HELLO NOTHING (3) </string>
+
+    <string name="speed_label">Scroll Speed (Faster to left)</string>
+    <string name="initial_speed_value">100 ms</string>
+
+    <!-- 新增亮度 -->
+    <string name="brightness_label">Brightness</string>
+    <string name="initial_brightness_value">255 (Max)</string>
+
+    <string name="btn_apply">Apply &amp; Save</string>
+    <string name="warning_text">Please ensure this toy is enabled\nin the Glyph Toys list</string>
+    <string name="toast_settings_updated">Settings Updated!</string>
 </resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glyph 跑馬燈</string>
+
+    <!-- UI Strings -->
+    <string name="editor_title">Glyph 跑馬燈編輯器</string>
+    <string name="input_hint">輸入跑馬燈文字</string>
+    <string name="default_marquee_text">HELLO NOTHING (3) </string>
+
+    <string name="speed_label">捲動速度 (越左越快)</string>
+    <string name="initial_speed_value">100 ms</string>
+
+    <!-- 新增亮度 -->
+    <string name="brightness_label">亮度控制</string>
+    <string name="initial_brightness_value">255 (最大)</string>
+
+    <string name="btn_apply">套用並儲存</string>
+    <string name="warning_text">請確保在 Glyph Toys 列表中\n已啟用此玩具</string>
+    <string name="toast_settings_updated">設定已更新！</string>
+</resources>
