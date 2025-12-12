@@ -106,5 +106,17 @@ class MainActivity : AppCompatActivity() {
 
             Toast.makeText(this, getString(R.string.toast_settings_updated), Toast.LENGTH_SHORT).show()
         }
+
+        val btnGithub = findViewById<Button>(R.id.btnGithub)
+        btnGithub.setOnClickListener {
+            try {
+                val uri = android.net.Uri.parse("https://github.com/bluehomewu/GlyphMarquee")
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                startActivity(intent)
+            } catch (e: Exception) {
+                // 防止使用者沒安裝瀏覽器導致閃退 (雖然機率很低)
+                Toast.makeText(this, "無法開啟連結", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center">
+    android:gravity="center_horizontal"> <!-- 改為水平置中，垂直由 weight 控制 -->
 
     <TextView
         android:layout_width="wrap_content"
@@ -12,7 +12,8 @@
         android:text="@string/editor_title"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="24dp"
+        android:layout_marginTop="24dp"/>
 
     <!-- 文字輸入框 -->
     <com.google.android.material.textfield.TextInputLayout
@@ -52,9 +53,7 @@
         android:text="@string/initial_speed_value"
         android:layout_gravity="end"/>
 
-    <!-- =========================== -->
     <!-- 亮度控制 -->
-    <!-- =========================== -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -77,11 +76,8 @@
         android:layout_height="wrap_content"
         android:text="@string/initial_brightness_value"
         android:layout_gravity="end"/>
-    <!-- =========================== -->
 
-    <!-- =========================== -->
     <!-- 方向控制 -->
-    <!-- =========================== -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -95,7 +91,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:minHeight="48dp"/>
-    <!-- =========================== -->
 
     <!-- 套用按鈕 -->
     <Button
@@ -103,14 +98,52 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/btn_apply"
-        android:layout_marginTop="32dp"/>
+        android:layout_marginTop="24dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/warning_text"
         android:gravity="center"
+        android:textSize="12sp"
         android:textColor="#888888"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="8dp"/>
+
+    <!-- =========================== -->
+    <!-- 彈簧視圖：把下方的東西推到底部 -->
+    <!-- =========================== -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <!-- =========================== -->
+    <!-- 作者資訊 Footer -->
+    <!-- =========================== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/author_info"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="#666666"/>
+
+        <!-- 使用 TextButton 風格，比較不搶眼 -->
+        <Button
+            android:id="@+id/btnGithub"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/visit_github"
+            android:textColor="#2196F3"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
 
 </LinearLayout>

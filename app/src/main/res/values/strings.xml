@@ -26,4 +26,8 @@
         <item>Up</item>
         <item>Down</item>
     </string-array>
+
+    <!-- Author Info -->
+    <string name="author_info">Author: Edward Wu\nGitHub: @bluehomewu</string>
+    <string name="visit_github">View on GitHub</string>
 </resources>

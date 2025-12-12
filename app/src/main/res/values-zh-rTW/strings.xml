@@ -26,4 +26,8 @@
         <item>向上</item>
         <item>向下</item>
     </string-array>
+
+    <!-- Author Info -->
+    <string name="author_info">作者: Edward Wu\nGitHub: @bluehomewu</string>
+    <string name="visit_github">前往 GitHub 查看</string>
 </resources>
