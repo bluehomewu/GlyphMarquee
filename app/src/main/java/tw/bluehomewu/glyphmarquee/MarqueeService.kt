@@ -9,7 +9,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -159,6 +158,9 @@ class MarqueeService : Service() {
         } catch (e: Exception) {}
     }
 
+    // ==========================================
+    // ⚠️ 修正點 1：移除所有 Padding，只畫一次
+    // ==========================================
     private fun prepareTextBitmap() {
         val paint = Paint().apply {
             color = Color.WHITE
@@ -168,29 +170,29 @@ class MarqueeService : Service() {
             textAlign = Paint.Align.LEFT
         }
 
+        // 取得精確的文字寬度 (包含最後面的空格)
         val textWidth = paint.measureText(textToScroll).toInt()
         val height = 25
-        val finalWidth = if (textWidth > 0) textWidth else 50
 
-        textBitmap = Bitmap.createBitmap(finalWidth * 2 + 50, height, Bitmap.Config.ARGB_8888)
+        // 防止寬度過小 (至少 1 pixel)
+        val finalWidth = if (textWidth > 0) textWidth else 1
+
+        // 建立剛好等於文字寬度的 Bitmap (不需要乘 2，也不需要加 50)
+        textBitmap = Bitmap.createBitmap(finalWidth, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(textBitmap)
         canvas.drawColor(Color.BLACK)
 
         val yPos = (height / 2f) - ((paint.descent() + paint.ascent()) / 2f)
+
+        // 只畫一次文字
         canvas.drawText(textToScroll, 0f, yPos, paint)
-        canvas.drawText(textToScroll, finalWidth.toFloat(), yPos, paint)
+
+        Log.d(TAG, "Bitmap Updated: Width=$finalWidth")
     }
 
-    // ==========================================
-    // ⚠️ 修改：移除時間限制的 AOD 邏輯
-    // ==========================================
     private fun triggerAodAnimation() {
-        // 先停止目前的，確保狀態重置
         stopMarquee()
-
-        Log.d(TAG, "Starting AOD Sequence (Continuous Mode)")
-
-        // 直接啟動，不再設定 postDelayed 來關閉它
+        Log.d(TAG, "Starting AOD Sequence")
         isRunning = true
         handler.post(marqueeRunnable)
     }
@@ -203,16 +205,20 @@ class MarqueeService : Service() {
                 synchronized(lock) {
                     if (::textBitmap.isInitialized) {
                         val matrixData = IntArray(625)
+                        val bmpWidth = textBitmap.width
 
                         for (y in 0 until 25) {
                             for (x in 0 until 25) {
-                                val targetX = (scrollX + x) % (textBitmap.width / 2)
+                                // ==========================================
+                                // ⚠️ 修正點 2：使用取餘數 (%) 達成無限循環
+                                // ==========================================
+                                // (當前捲軸位置 + x) 除以 圖片總寬度 的餘數
+                                // 這樣當索引超出圖片寬度時，會自動回到 0，達成完美循環
+                                val targetX = (scrollX + x) % bmpWidth
 
-                                if (targetX < textBitmap.width) {
-                                    val pixel = textBitmap.getPixel(targetX, y)
-                                    val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
-                                    matrixData[y * 25 + x] = pixelBrightness
-                                }
+                                val pixel = textBitmap.getPixel(targetX, y)
+                                val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
+                                matrixData[y * 25 + x] = pixelBrightness
                             }
                         }
 
@@ -224,8 +230,11 @@ class MarqueeService : Service() {
                             glyphManager.setMatrixFrame(frame)
                         }
 
+                        // 移動捲軸
                         scrollX += 1
-                        if (scrollX >= textBitmap.width / 2) scrollX = 0
+                        // 當捲軸超過圖片寬度時，重置為 0 (其實不重置也可以，因為上面有 % bmpWidth)
+                        // 但為了避免整數溢位，還是重置一下比較好
+                        if (scrollX >= bmpWidth) scrollX = 0
                     }
                 }
 
