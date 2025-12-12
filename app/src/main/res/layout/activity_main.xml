@@ -135,6 +135,15 @@
             android:textStyle="bold"
             android:textColor="#666666"/>
 
+        <TextView
+            android:id="@+id/tvVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="v1.0"
+            android:textSize="12sp"
+            android:textColor="#AAAAAA"
+            android:layout_marginTop="4dp"/>
+
         <!-- 使用 TextButton 風格，比較不搶眼 -->
         <Button
             android:id="@+id/btnGithub"

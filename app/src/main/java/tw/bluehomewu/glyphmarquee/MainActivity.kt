@@ -2,6 +2,7 @@ package tw.bluehomewu.glyphmarquee
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -117,6 +118,15 @@ class MainActivity : AppCompatActivity() {
                 // 防止使用者沒安裝瀏覽器導致閃退 (雖然機率很低)
                 Toast.makeText(this, "無法開啟連結", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        val tvVersion = findViewById<TextView>(R.id.tvVersion)
+        try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            val versionName = packageInfo.versionName
+            tvVersion.text = "v$versionName"
+        } catch (e: Exception) {
+            tvVersion.text = "Version Unknown"
         }
     }
 }
