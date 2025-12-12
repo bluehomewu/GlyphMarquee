@@ -53,6 +53,11 @@ class MarqueeService : Service() {
 
                 if (aodEvent == event) {
                     Log.d(TAG, "Received AOD Event - Triggering Animation")
+
+                    // 1. 強制從 SharedPreferences 重新讀取最新的方向、文字、亮度
+                    loadSettings()
+
+                    // 2. 觸發動畫
                     triggerAodAnimation()
                 }
             }
@@ -220,7 +225,7 @@ class MarqueeService : Service() {
             textBitmap = baseBitmap
         }
 
-        Log.d(TAG, "Bitmap Updated: W=${textBitmap.width}, H=${textBitmap.height}, Dir=$direction")
+        Log.d(TAG, "Bitmap Updated for AOD/Normal. Dir=$direction")
     }
 
     private fun triggerAodAnimation() {
