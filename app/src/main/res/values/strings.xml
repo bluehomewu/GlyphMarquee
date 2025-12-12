@@ -10,7 +10,7 @@
     <string name="speed_label">Scroll Speed (Faster to left)</string>
     <string name="initial_speed_value">100 ms</string>
 
-    <!-- 新增亮度 -->
+    <!-- Brightness -->
     <string name="brightness_label">Brightness</string>
     <string name="initial_brightness_value">255 (Max)</string>
 
