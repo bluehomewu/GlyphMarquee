@@ -17,4 +17,13 @@
     <string name="btn_apply">Apply &amp; Save</string>
     <string name="warning_text">Please ensure this toy is enabled\nin the Glyph Toys list</string>
     <string name="toast_settings_updated">Settings Updated!</string>
+
+    <!-- Direction Strings -->
+    <string name="direction_label">Scroll Direction</string>
+    <string-array name="directions">
+        <item>Left (Default)</item>
+        <item>Right</item>
+        <item>Up</item>
+        <item>Down</item>
+    </string-array>
 </resources>

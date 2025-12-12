@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Handler
@@ -30,8 +31,10 @@ class MarqueeService : Service() {
     private var textToScroll = " HELLO NOTHING (3) "
     private var updateSpeed = 100L
     private var brightness = 255
+    private var direction = 0 // 0:Left, 1:Right, 2:Up, 3:Down
 
-    private var scrollX = 0
+    // 使用 scrollOffset 替代 scrollX，因為它現在可能代表 X 也可能代表 Y
+    private var scrollOffset = 0
     private lateinit var textBitmap: Bitmap
     private val lock = Any()
 
@@ -131,9 +134,11 @@ class MarqueeService : Service() {
         textToScroll = prefs.getString("text", " HELLO NOTHING (3) ") ?: " ERROR "
         updateSpeed = prefs.getInt("speed", 100).toLong()
         brightness = prefs.getInt("brightness", 255)
+        // 讀取方向
+        direction = prefs.getInt("direction", 0)
 
         synchronized(lock) {
-            scrollX = 0
+            scrollOffset = 0
             prepareTextBitmap()
         }
     }
@@ -158,9 +163,6 @@ class MarqueeService : Service() {
         } catch (e: Exception) {}
     }
 
-    // ==========================================
-    // ⚠️ 修正點 1：移除所有 Padding，只畫一次
-    // ==========================================
     private fun prepareTextBitmap() {
         val paint = Paint().apply {
             color = Color.WHITE
@@ -177,9 +179,9 @@ class MarqueeService : Service() {
         // 防止寬度過小 (至少 1 pixel)
         val finalWidth = if (textWidth > 0) textWidth else 1
 
-        // 建立剛好等於文字寬度的 Bitmap (不需要乘 2，也不需要加 50)
-        textBitmap = Bitmap.createBitmap(finalWidth, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(textBitmap)
+        // 1. 先畫出標準的橫向文字圖片 (Base Bitmap)
+        val baseBitmap = Bitmap.createBitmap(finalWidth, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(baseBitmap)
         canvas.drawColor(Color.BLACK)
 
         val yPos = (height / 2f) - ((paint.descent() + paint.ascent()) / 2f)
@@ -187,7 +189,38 @@ class MarqueeService : Service() {
         // 只畫一次文字
         canvas.drawText(textToScroll, 0f, yPos, paint)
 
-        Log.d(TAG, "Bitmap Updated: Width=$finalWidth")
+        // 2. 根據方向進行旋轉
+        if (direction == 2 || direction == 3) {
+            // 如果是 Up/Down 模式，將圖片旋轉 90 度
+            // 這樣文字就會變成直排，適合手機直立時閱讀
+            val matrix = Matrix()
+
+            // ==========================================
+            // ⚠️ 修正點：區分上下方向的旋轉角度
+            // ==========================================
+            if (direction == 2) {
+                // 向上 (Up)：順時針 90 度
+                matrix.postRotate(90f)
+            } else {
+                // 向下 (Down)：逆時針 90 度 (-90)
+                matrix.postRotate(-90f)
+            }
+
+            // 建立新的旋轉後 Bitmap
+            // 注意：原本的 寬x高 變成 高x寬
+            try {
+                // 建立旋轉後的直向圖片
+                textBitmap = Bitmap.createBitmap(baseBitmap, 0, 0, baseBitmap.width, baseBitmap.height, matrix, true)
+            } catch (e: Exception) {
+                // 如果旋轉失敗，就用原本的
+                textBitmap = baseBitmap
+            }
+        } else {
+            // 左右方向不旋轉
+            textBitmap = baseBitmap
+        }
+
+        Log.d(TAG, "Bitmap Updated: W=${textBitmap.width}, H=${textBitmap.height}, Dir=$direction")
     }
 
     private fun triggerAodAnimation() {
@@ -206,19 +239,50 @@ class MarqueeService : Service() {
                     if (::textBitmap.isInitialized) {
                         val matrixData = IntArray(625)
                         val bmpWidth = textBitmap.width
+                        val bmpHeight = textBitmap.height
 
                         for (y in 0 until 25) {
                             for (x in 0 until 25) {
-                                // ==========================================
-                                // ⚠️ 修正點 2：使用取餘數 (%) 達成無限循環
-                                // ==========================================
-                                // (當前捲軸位置 + x) 除以 圖片總寬度 的餘數
-                                // 這樣當索引超出圖片寬度時，會自動回到 0，達成完美循環
-                                val targetX = (scrollX + x) % bmpWidth
+                                var fetchX = 0
+                                var fetchY = 0
 
-                                val pixel = textBitmap.getPixel(targetX, y)
-                                val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
-                                matrixData[y * 25 + x] = pixelBrightness
+                                // ==========================================
+                                // 根據方向讀取像素
+                                // ==========================================
+                                when (direction) {
+                                    // 橫向模式 (圖片寬度很長，高度固定 25)
+                                    0 -> { // Left: X 軸遞增
+                                        fetchX = (scrollOffset + x) % bmpWidth
+                                        fetchY = y
+                                    }
+                                    1 -> { // Right: X 軸遞減 (反向)
+                                        // (bmpWidth - ...) 確保是正數索引
+                                        fetchX = (bmpWidth - (scrollOffset % bmpWidth) + x) % bmpWidth
+                                        fetchY = y
+                                    }
+
+                                    // 直向模式 (圖片已旋轉，寬度固定 25，高度很長)
+                                    // 注意：這時我們的 "視窗" 是在 Y 軸上移動
+                                    2 -> { // Up (順時針 90 度後，Y 軸遞增)
+                                        fetchX = x
+                                        fetchY = (scrollOffset + y) % bmpHeight
+                                    }
+                                    3 -> { // Down (逆時針 90 度後，Y 軸遞減)
+                                        fetchX = x
+                                        // 反向捲動邏輯
+                                        fetchY = (bmpHeight - (scrollOffset % bmpHeight) + y) % bmpHeight
+                                    }
+                                }
+
+                                // 讀取像素並填入 Matrix
+                                // 確保座標在範圍內 (對於 Up/Down，X 應該在 0-24 內；對於 Left/Right，Y 應該在 0-24 內)
+                                if (fetchX < bmpWidth && fetchY < bmpHeight) {
+                                    val pixel = textBitmap.getPixel(fetchX, fetchY)
+                                    val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
+                                    matrixData[y * 25 + x] = pixelBrightness
+                                } else {
+                                    matrixData[y * 25 + x] = 0
+                                }
                             }
                         }
 
@@ -230,11 +294,9 @@ class MarqueeService : Service() {
                             glyphManager.setMatrixFrame(frame)
                         }
 
-                        // 移動捲軸
-                        scrollX += 1
-                        // 當捲軸超過圖片寬度時，重置為 0 (其實不重置也可以，因為上面有 % bmpWidth)
-                        // 但為了避免整數溢位，還是重置一下比較好
-                        if (scrollX >= bmpWidth) scrollX = 0
+                        scrollOffset += 1
+                        // 防止整數溢位，雖然很久才會發生
+                        if (scrollOffset > 1000000) scrollOffset = 0
                     }
                 }
 

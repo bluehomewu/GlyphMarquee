@@ -3,8 +3,10 @@ package tw.bluehomewu.glyphmarquee
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +26,20 @@ class MainActivity : AppCompatActivity() {
         val sbBrightness = findViewById<SeekBar>(R.id.sbBrightness)
         val tvBrightnessValue = findViewById<TextView>(R.id.tvBrightnessValue)
 
+        // 新增 Spinner 參考
+        val spDirection = findViewById<Spinner>(R.id.spDirection)
+
         val btnApply = findViewById<Button>(R.id.btnApply)
+
+        // 設定 Spinner 的內容 (讀取 strings.xml 裡的陣列)
+        ArrayAdapter.createFromResource(
+            this,
+            R.array.directions,
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spDirection.adapter = adapter
+        }
 
         // 1. 讀取儲存的設定
         val prefs = getSharedPreferences("MarqueePrefs", Context.MODE_PRIVATE)
@@ -40,6 +55,10 @@ class MainActivity : AppCompatActivity() {
         val savedBrightness = prefs.getInt("brightness", 255)
         sbBrightness.progress = savedBrightness
         tvBrightnessValue.text = "$savedBrightness"
+
+        // 讀取方向 (預設 0 = Left)
+        val savedDirection = prefs.getInt("direction", 0)
+        spDirection.setSelection(savedDirection)
 
         // 2. 拉桿監聽器
         sbSpeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -68,11 +87,15 @@ class MainActivity : AppCompatActivity() {
 
             val newBrightness = sbBrightness.progress
 
+            // 取得選中的方向 (Index)
+            val newDirection = spDirection.selectedItemPosition
+
             // 儲存設定
             prefs.edit().apply {
                 putString("text", newText)
                 putInt("speed", newSpeed)
                 putInt("brightness", newBrightness)
+                putInt("direction", newDirection) // 儲存方向
                 apply()
             }
 

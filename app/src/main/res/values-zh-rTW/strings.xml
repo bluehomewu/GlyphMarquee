@@ -17,4 +17,13 @@
     <string name="btn_apply">套用並儲存</string>
     <string name="warning_text">請確保在 Glyph Toys 列表中\n已啟用此玩具</string>
     <string name="toast_settings_updated">設定已更新！</string>
+
+    <!-- Direction Strings -->
+    <string name="direction_label">捲動方向</string>
+    <string-array name="directions">
+        <item>向左 (預設)</item>
+        <item>向右</item>
+        <item>向上</item>
+        <item>向下</item>
+    </string-array>
 </resources>
