@@ -6,6 +6,7 @@
     <string name="editor_title">Glyph Marquee Editor</string>
     <string name="input_hint">Enter text here</string>
     <string name="default_marquee_text">HELLO NOTHING (3) </string>
+    <string name="default_marquee_text_4a_pro">HELLO NOTHING (4a) Pro </string>
 
     <string name="speed_label">Scroll Speed (Faster to left)</string>
     <string name="initial_speed_value">100 ms</string>

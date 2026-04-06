@@ -26,12 +26,13 @@ class MainActivity : AppCompatActivity() {
         val etText = findViewById<TextInputEditText>(R.id.etMarqueeText)
         val sbSpeed = findViewById<SeekBar>(R.id.sbSpeed)
 
+        // 偵測裝置矩陣尺寸，Phone (4a) Pro = 13，Phone (3) = 25
+        val isPhone4aPro = try { Common.getDeviceMatrixLength() == 13 } catch (_: Exception) { false }
+
         // Phone (4a) Pro (13×13) 不適合顯示文字，提示用戶改用符號或 Emoji
-        try {
-            if (Common.getDeviceMatrixLength() == 13) {
-                tilText.helperText = getString(R.string.input_helper_phone_4a_pro)
-            }
-        } catch (_: Exception) {}
+        if (isPhone4aPro) {
+            tilText.helperText = getString(R.string.input_helper_phone_4a_pro)
+        }
         val tvSpeedValue = findViewById<TextView>(R.id.tvSpeedValue)
 
         // 新增亮度控制項
@@ -56,7 +57,9 @@ class MainActivity : AppCompatActivity() {
         // 1. 讀取儲存的設定
         val prefs = getSharedPreferences("MarqueePrefs", Context.MODE_PRIVATE)
 
-        etText.setText(prefs.getString("text", getString(R.string.default_marquee_text)))
+        val defaultText = if (isPhone4aPro) getString(R.string.default_marquee_text_4a_pro)
+                          else getString(R.string.default_marquee_text)
+        etText.setText(prefs.getString("text", defaultText))
 
         // 讀取速度
         val savedSpeed = prefs.getInt("speed", 100)
@@ -122,8 +125,7 @@ class MainActivity : AppCompatActivity() {
         // Mismatch 4: guide users to Glyph Toys manager (README recommendation)
         // Only show on Phone (3) — Phone (4a) Pro only supports AOD, not the full Glyph Toys UI
         val btnOpenGlyphToys = findViewById<Button>(R.id.btnOpenGlyphToys)
-        val isPhone3 = try { Common.getDeviceMatrixLength() != 13 } catch (_: Exception) { true }
-        if (isPhone3) {
+        if (!isPhone4aPro) {
             btnOpenGlyphToys.setOnClickListener {
                 try {
                     val intent = Intent()

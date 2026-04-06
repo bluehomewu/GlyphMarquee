@@ -139,7 +139,8 @@ class MarqueeService : Service() {
 
     private fun loadSettings() {
         val prefs = getSharedPreferences("MarqueePrefs", Context.MODE_PRIVATE)
-        textToScroll = prefs.getString("text", " HELLO NOTHING (3) ") ?: " ERROR "
+        val defaultText = if (matrixLength == 13) " HELLO NOTHING (4a) Pro " else " HELLO NOTHING (3) "
+        textToScroll = prefs.getString("text", defaultText) ?: " ERROR "
         updateSpeed = prefs.getInt("speed", 100).toLong()
         brightness = prefs.getInt("brightness", 255)
         // 讀取方向
