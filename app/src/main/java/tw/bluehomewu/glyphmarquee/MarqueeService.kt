@@ -170,7 +170,10 @@ class MarqueeService : Service() {
     private fun turnOffLights() {
         try {
             if (::glyphManager.isInitialized) {
-                glyphManager.setMatrixColors(IntArray(matrixLength * matrixLength) { 0 })
+                val frame = GlyphMatrixFrame.Builder()
+                    .addTop(IntArray(matrixLength * matrixLength) { 0 })
+                    .build(applicationContext)
+                glyphManager.setMatrixFrame(frame)
             }
         } catch (e: Exception) {}
     }
