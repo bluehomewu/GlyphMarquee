@@ -161,9 +161,8 @@ class MarqueeService : Service() {
 
     private fun turnOffLights() {
         try {
-            val blackFrame = IntArray(625) { 0 }
             if (::glyphManager.isInitialized) {
-                glyphManager.setMatrixFrame(blackFrame)
+                glyphManager.setMatrixColors(IntArray(625) { 0 })
             }
         } catch (e: Exception) {}
     }
