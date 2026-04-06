@@ -16,6 +16,8 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
+import com.nothing.ketchum.Common
+import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphToy
@@ -32,6 +34,9 @@ class MarqueeService : Service() {
     private var updateSpeed = 100L
     private var brightness = 255
     private var direction = 0 // 0:Left, 1:Right, 2:Up, 3:Down
+
+    // 裝置矩陣尺寸（Phone (3) = 25, Phone (4a) Pro = 13）
+    private var matrixLength = 25
 
     // 使用 scrollOffset 替代 scrollX，因為它現在可能代表 X 也可能代表 Y
     private var scrollOffset = 0
@@ -71,7 +76,10 @@ class MarqueeService : Service() {
             Log.d(TAG, "Glyph Matrix Service Connected")
             Thread {
                 try {
-                    glyphManager.register("23112")
+                    matrixLength = Common.getDeviceMatrixLength()
+                    val deviceId = if (matrixLength == 13) Glyph.DEVICE_25111p else Glyph.DEVICE_23112
+                    Log.d(TAG, "Device: $deviceId, Matrix: ${matrixLength}x${matrixLength}")
+                    glyphManager.register(deviceId)
                     Thread.sleep(100)
                     loadSettings()
 
@@ -162,7 +170,7 @@ class MarqueeService : Service() {
     private fun turnOffLights() {
         try {
             if (::glyphManager.isInitialized) {
-                glyphManager.setMatrixColors(IntArray(625) { 0 })
+                glyphManager.setMatrixColors(IntArray(matrixLength * matrixLength) { 0 })
             }
         } catch (e: Exception) {}
     }
@@ -178,7 +186,7 @@ class MarqueeService : Service() {
 
         // 取得精確的文字寬度 (包含最後面的空格)
         val textWidth = paint.measureText(textToScroll).toInt()
-        val height = 25
+        val height = matrixLength
 
         // 防止寬度過小 (至少 1 pixel)
         val finalWidth = if (textWidth > 0) textWidth else 1
@@ -224,7 +232,7 @@ class MarqueeService : Service() {
             textBitmap = baseBitmap
         }
 
-        Log.d(TAG, "Bitmap Updated for AOD/Normal. Dir=$direction")
+        Log.d(TAG, "Bitmap Updated for AOD/Normal. Dir=$direction, MatrixLength=$matrixLength")
     }
 
     private fun triggerAodAnimation() {
@@ -241,12 +249,13 @@ class MarqueeService : Service() {
             try {
                 synchronized(lock) {
                     if (::textBitmap.isInitialized) {
-                        val matrixData = IntArray(625)
+                        val size = matrixLength
+                        val matrixData = IntArray(size * size)
                         val bmpWidth = textBitmap.width
                         val bmpHeight = textBitmap.height
 
-                        for (y in 0 until 25) {
-                            for (x in 0 until 25) {
+                        for (y in 0 until size) {
+                            for (x in 0 until size) {
                                 var fetchX = 0
                                 var fetchY = 0
 
@@ -254,38 +263,34 @@ class MarqueeService : Service() {
                                 // 根據方向讀取像素
                                 // ==========================================
                                 when (direction) {
-                                    // 橫向模式 (圖片寬度很長，高度固定 25)
+                                    // 橫向模式 (圖片寬度很長，高度固定 matrixLength)
                                     0 -> { // Left: X 軸遞增
                                         fetchX = (scrollOffset + x) % bmpWidth
                                         fetchY = y
                                     }
                                     1 -> { // Right: X 軸遞減 (反向)
-                                        // (bmpWidth - ...) 確保是正數索引
                                         fetchX = (bmpWidth - (scrollOffset % bmpWidth) + x) % bmpWidth
                                         fetchY = y
                                     }
 
-                                    // 直向模式 (圖片已旋轉，寬度固定 25，高度很長)
-                                    // 注意：這時我們的 "視窗" 是在 Y 軸上移動
+                                    // 直向模式 (圖片已旋轉，寬度固定 matrixLength，高度很長)
                                     2 -> { // Up (順時針 90 度後，Y 軸遞增)
                                         fetchX = x
                                         fetchY = (scrollOffset + y) % bmpHeight
                                     }
                                     3 -> { // Down (逆時針 90 度後，Y 軸遞減)
                                         fetchX = x
-                                        // 反向捲動邏輯
                                         fetchY = (bmpHeight - (scrollOffset % bmpHeight) + y) % bmpHeight
                                     }
                                 }
 
                                 // 讀取像素並填入 Matrix
-                                // 確保座標在範圍內 (對於 Up/Down，X 應該在 0-24 內；對於 Left/Right，Y 應該在 0-24 內)
                                 if (fetchX < bmpWidth && fetchY < bmpHeight) {
                                     val pixel = textBitmap.getPixel(fetchX, fetchY)
                                     val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
-                                    matrixData[y * 25 + x] = pixelBrightness
+                                    matrixData[y * size + x] = pixelBrightness
                                 } else {
-                                    matrixData[y * 25 + x] = 0
+                                    matrixData[y * size + x] = 0
                                 }
                             }
                         }
