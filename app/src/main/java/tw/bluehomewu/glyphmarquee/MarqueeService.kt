@@ -181,7 +181,7 @@ class MarqueeService : Service() {
     private fun prepareTextBitmap() {
         val paint = Paint().apply {
             color = Color.WHITE
-            textSize = 20f
+            textSize = matrixLength * 0.8f
             isAntiAlias = true
             typeface = Typeface.DEFAULT_BOLD
             textAlign = Paint.Align.LEFT
