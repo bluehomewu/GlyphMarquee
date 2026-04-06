@@ -12,6 +12,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.nothing.ketchum.Common
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,8 +21,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val tilText = findViewById<TextInputLayout>(R.id.tilMarqueeText)
         val etText = findViewById<TextInputEditText>(R.id.etMarqueeText)
         val sbSpeed = findViewById<SeekBar>(R.id.sbSpeed)
+
+        // Phone (4a) Pro (13×13) 不適合顯示文字，提示用戶改用符號或 Emoji
+        try {
+            if (Common.getDeviceMatrixLength() == 13) {
+                tilText.helperText = getString(R.string.input_helper_phone_4a_pro)
+            }
+        } catch (_: Exception) {}
         val tvSpeedValue = findViewById<TextView>(R.id.tvSpeedValue)
 
         // 新增亮度控制項
