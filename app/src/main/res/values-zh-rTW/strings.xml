@@ -17,6 +17,7 @@
     <string name="btn_apply">套用並儲存</string>
     <string name="warning_text">請確保在 Glyph Toys 列表中\n已啟用此玩具</string>
     <string name="input_helper_phone_4a_pro">Phone (4a) Pro 的矩陣只有 13×13，無法清楚顯示文字，請改用符號或 Emoji（例如 ★ ♦ 😊）</string>
+    <string name="btn_open_glyph_toys">開啟 Glyph Toys 管理頁</string>
     <string name="toast_settings_updated">設定已更新！</string>
 
     <!-- Direction Strings -->

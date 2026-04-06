@@ -1,5 +1,6 @@
 package tw.bluehomewu.glyphmarquee
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -116,6 +117,21 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
 
             Toast.makeText(this, getString(R.string.toast_settings_updated), Toast.LENGTH_SHORT).show()
+        }
+
+        // Mismatch 4: guide users to Glyph Toys manager (README recommendation)
+        val btnOpenGlyphToys = findViewById<Button>(R.id.btnOpenGlyphToys)
+        btnOpenGlyphToys.setOnClickListener {
+            try {
+                val intent = Intent()
+                intent.component = ComponentName(
+                    "com.nothing.thirdparty",
+                    "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                )
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Glyph Toys Manager not available on this device", Toast.LENGTH_SHORT).show()
+            }
         }
 
         val btnGithub = findViewById<Button>(R.id.btnGithub)

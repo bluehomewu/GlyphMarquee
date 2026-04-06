@@ -18,8 +18,9 @@ import android.os.Messenger
 import android.util.Log
 import com.nothing.ketchum.Common
 import com.nothing.ketchum.Glyph
-import com.nothing.ketchum.GlyphMatrixManager
 import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphMatrixManager
+import com.nothing.ketchum.GlyphMatrixObject
 import com.nothing.ketchum.GlyphToy
 
 class MarqueeService : Service() {
@@ -116,19 +117,13 @@ class MarqueeService : Service() {
         return serviceMessenger.binder
     }
 
+    // Mismatch 3: return false so system calls onBind() again on rebind (matches README)
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "System Unbound")
         isBoundBySystem = false
         stopMarquee()
         turnOffLights()
-        return true
-    }
-
-    override fun onRebind(intent: Intent?) {
-        Log.d(TAG, "System Rebound")
-        isBoundBySystem = true
-        startMarquee()
-        super.onRebind(intent)
+        return false
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -167,11 +162,16 @@ class MarqueeService : Service() {
         stopMarquee()
     }
 
+    // Mismatch 1: use GlyphMatrixObject instead of addTop(IntArray)
     private fun turnOffLights() {
         try {
             if (::glyphManager.isInitialized) {
+                val blackBitmap = Bitmap.createBitmap(matrixLength, matrixLength, Bitmap.Config.ARGB_8888)
+                val obj = GlyphMatrixObject.Builder()
+                    .setImageSource(blackBitmap)
+                    .build()
                 val frame = GlyphMatrixFrame.Builder()
-                    .addTop(IntArray(matrixLength * matrixLength) { 0 })
+                    .addTop(obj)
                     .build(applicationContext)
                 glyphManager.setMatrixFrame(frame)
             }
@@ -210,9 +210,6 @@ class MarqueeService : Service() {
             // 這樣文字就會變成直排，適合手機直立時閱讀
             val matrix = Matrix()
 
-            // ==========================================
-            // ⚠️ 修正點：區分上下方向的旋轉角度
-            // ==========================================
             if (direction == 2) {
                 // 向上 (Up)：順時針 90 度
                 matrix.postRotate(90f)
@@ -221,17 +218,12 @@ class MarqueeService : Service() {
                 matrix.postRotate(-90f)
             }
 
-            // 建立新的旋轉後 Bitmap
-            // 注意：原本的 寬x高 變成 高x寬
             try {
-                // 建立旋轉後的直向圖片
                 textBitmap = Bitmap.createBitmap(baseBitmap, 0, 0, baseBitmap.width, baseBitmap.height, matrix, true)
             } catch (e: Exception) {
-                // 如果旋轉失敗，就用原本的
                 textBitmap = baseBitmap
             }
         } else {
-            // 左右方向不旋轉
             textBitmap = baseBitmap
         }
 
@@ -253,53 +245,43 @@ class MarqueeService : Service() {
                 synchronized(lock) {
                     if (::textBitmap.isInitialized) {
                         val size = matrixLength
-                        val matrixData = IntArray(size * size)
                         val bmpWidth = textBitmap.width
                         val bmpHeight = textBitmap.height
 
+                        // 計算每個 LED 的亮度值（含捲動位移與方向）
+                        val matrixData = IntArray(size * size)
                         for (y in 0 until size) {
                             for (x in 0 until size) {
-                                var fetchX = 0
-                                var fetchY = 0
-
-                                // ==========================================
-                                // 根據方向讀取像素
-                                // ==========================================
+                                val fetchX: Int
+                                val fetchY: Int
                                 when (direction) {
-                                    // 橫向模式 (圖片寬度很長，高度固定 matrixLength)
-                                    0 -> { // Left: X 軸遞增
-                                        fetchX = (scrollOffset + x) % bmpWidth
-                                        fetchY = y
-                                    }
-                                    1 -> { // Right: X 軸遞減 (反向)
-                                        fetchX = (bmpWidth - (scrollOffset % bmpWidth) + x) % bmpWidth
-                                        fetchY = y
-                                    }
-
-                                    // 直向模式 (圖片已旋轉，寬度固定 matrixLength，高度很長)
-                                    2 -> { // Up (順時針 90 度後，Y 軸遞增)
-                                        fetchX = x
-                                        fetchY = (scrollOffset + y) % bmpHeight
-                                    }
-                                    3 -> { // Down (逆時針 90 度後，Y 軸遞減)
-                                        fetchX = x
-                                        fetchY = (bmpHeight - (scrollOffset % bmpHeight) + y) % bmpHeight
-                                    }
+                                    0 -> { fetchX = (scrollOffset + x) % bmpWidth; fetchY = y }
+                                    1 -> { fetchX = (bmpWidth - (scrollOffset % bmpWidth) + x) % bmpWidth; fetchY = y }
+                                    2 -> { fetchX = x; fetchY = (scrollOffset + y) % bmpHeight }
+                                    3 -> { fetchX = x; fetchY = (bmpHeight - (scrollOffset % bmpHeight) + y) % bmpHeight }
+                                    else -> { fetchX = x; fetchY = y }
                                 }
-
-                                // 讀取像素並填入 Matrix
                                 if (fetchX < bmpWidth && fetchY < bmpHeight) {
                                     val pixel = textBitmap.getPixel(fetchX, fetchY)
-                                    val pixelBrightness = if (Color.red(pixel) > 50) brightness else 0
-                                    matrixData[y * size + x] = pixelBrightness
-                                } else {
-                                    matrixData[y * size + x] = 0
+                                    matrixData[y * size + x] = if (Color.red(pixel) > 50) brightness else 0
                                 }
                             }
                         }
 
+                        // Mismatch 1: convert to Bitmap and use GlyphMatrixObject (documented API)
+                        val pixels = IntArray(size * size) { i ->
+                            val v = matrixData[i].coerceIn(0, 255)
+                            Color.argb(255, v, v, v)
+                        }
+                        val frameBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+                        frameBitmap.setPixels(pixels, 0, size, 0, 0, size, size)
+
+                        val obj = GlyphMatrixObject.Builder()
+                            .setImageSource(frameBitmap)
+                            .build()
+
                         val frame = GlyphMatrixFrame.Builder()
-                            .addTop(matrixData)
+                            .addTop(obj)
                             .build(applicationContext)
 
                         if (::glyphManager.isInitialized) {
@@ -307,7 +289,6 @@ class MarqueeService : Service() {
                         }
 
                         scrollOffset += 1
-                        // 防止整數溢位，雖然很久才會發生
                         if (scrollOffset > 1000000) scrollOffset = 0
                     }
                 }

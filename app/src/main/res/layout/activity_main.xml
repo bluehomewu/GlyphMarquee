@@ -112,6 +112,14 @@
         android:textColor="#888888"
         android:layout_marginTop="8dp"/>
 
+    <Button
+        android:id="@+id/btnOpenGlyphToys"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_open_glyph_toys"
+        android:layout_marginTop="8dp"/>
+
     <!-- =========================== -->
     <!-- 彈簧視圖：把下方的東西推到底部 -->
     <!-- =========================== -->
