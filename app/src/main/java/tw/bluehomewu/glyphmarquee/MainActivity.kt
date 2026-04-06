@@ -120,18 +120,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Mismatch 4: guide users to Glyph Toys manager (README recommendation)
+        // Only show on Phone (3) — Phone (4a) Pro only supports AOD, not the full Glyph Toys UI
         val btnOpenGlyphToys = findViewById<Button>(R.id.btnOpenGlyphToys)
-        btnOpenGlyphToys.setOnClickListener {
-            try {
-                val intent = Intent()
-                intent.component = ComponentName(
-                    "com.nothing.thirdparty",
-                    "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
-                )
-                startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(this, "Glyph Toys Manager not available on this device", Toast.LENGTH_SHORT).show()
+        val isPhone3 = try { Common.getDeviceMatrixLength() != 13 } catch (_: Exception) { true }
+        if (isPhone3) {
+            btnOpenGlyphToys.setOnClickListener {
+                try {
+                    val intent = Intent()
+                    intent.component = ComponentName(
+                        "com.nothing.thirdparty",
+                        "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Glyph Toys Manager not available on this device", Toast.LENGTH_SHORT).show()
+                }
             }
+        } else {
+            btnOpenGlyphToys.visibility = android.view.View.GONE
         }
 
         val btnGithub = findViewById<Button>(R.id.btnGithub)
