@@ -121,8 +121,13 @@ class MarqueeService : Service() {
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "System Unbound")
         isBoundBySystem = false
-        stopMarquee()
-        turnOffLights()
+        // 延遲關閉，避免系統在 AOD 過渡期短暫重連時造成閃爍
+        handler.postDelayed({
+            if (!isBoundBySystem) {
+                stopMarquee()
+                turnOffLights()
+            }
+        }, 500)
         return false
     }
 
@@ -154,13 +159,14 @@ class MarqueeService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
         turnOffLights()
         try {
             glyphManager.unInit()
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        stopMarquee()
+        isRunning = false
     }
 
     // Mismatch 1: use GlyphMatrixObject instead of addTop(IntArray)
@@ -231,11 +237,19 @@ class MarqueeService : Service() {
         Log.d(TAG, "Bitmap Updated for AOD/Normal. Dir=$direction, MatrixLength=$matrixLength")
     }
 
-    private fun triggerAodAnimation() {
-        stopMarquee()
+    // 延遲啟動，讓系統在 AOD 過渡期穩定後再開始動畫
+    private val aodStartRunnable = Runnable {
         Log.d(TAG, "Starting AOD Sequence")
         isRunning = true
         handler.post(marqueeRunnable)
+    }
+
+    private fun triggerAodAnimation() {
+        isRunning = false
+        handler.removeCallbacks(marqueeRunnable)
+        handler.removeCallbacks(aodStartRunnable)
+        Log.d(TAG, "AOD Event: queuing animation start (200ms delay)")
+        handler.postDelayed(aodStartRunnable, 200)
     }
 
     private val marqueeRunnable = object : Runnable {
@@ -294,10 +308,14 @@ class MarqueeService : Service() {
                     }
                 }
 
-                handler.postDelayed(this, updateSpeed)
-
             } catch (e: Exception) {
                 Log.e(TAG, "Animation Error: ${e.message}")
+            } finally {
+                // 無論是否發生例外，只要 isRunning 仍為 true 就繼續排程
+                // 避免例外發生後動畫靜止但 GlyphMatrix 仍亮著的情況
+                if (isRunning) {
+                    handler.postDelayed(this, updateSpeed)
+                }
             }
         }
     }
@@ -311,9 +329,8 @@ class MarqueeService : Service() {
     }
 
     private fun stopMarquee() {
-        if (isRunning) {
-            isRunning = false
-            handler.removeCallbacks(marqueeRunnable)
-        }
+        isRunning = false
+        handler.removeCallbacks(marqueeRunnable)
+        handler.removeCallbacks(aodStartRunnable)
     }
 }
