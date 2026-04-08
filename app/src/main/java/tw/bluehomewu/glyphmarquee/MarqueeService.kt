@@ -39,6 +39,8 @@ class MarqueeService : Service() {
     private var aodTimeoutMinutes = 0
     // 防止 AOD 重複事件不斷重置計時器
     private var aodTimeoutScheduled = false
+    // timeout 觸發後封鎖後續 AOD 事件，直到下次螢幕喚醒（onUnbind）才重置
+    private var aodTimedOut = false
 
     // 裝置矩陣尺寸（Phone (3) = 25, Phone (4a) Pro = 13）
     private var matrixLength = 25
@@ -117,6 +119,7 @@ class MarqueeService : Service() {
     override fun onBind(intent: Intent?): IBinder? {
         Log.d(TAG, "System Bound (Toy Selected / AOD Active)")
         isBoundBySystem = true
+        aodTimedOut = false  // 新的 AOD session 開始，解除封鎖
         startMarquee()
         return serviceMessenger.binder
     }
@@ -128,6 +131,7 @@ class MarqueeService : Service() {
         // 延遲關閉，避免系統在 AOD 過渡期短暫重連時造成閃爍
         handler.postDelayed({
             if (!isBoundBySystem) {
+                aodTimedOut = false  // 螢幕喚醒，下次 AOD 可重新執行
                 stopMarquee()
                 turnOffLights()
             }
@@ -249,6 +253,7 @@ class MarqueeService : Service() {
     private val aodTimeoutRunnable = Runnable {
         Log.d(TAG, "AOD timeout reached, stopping animation")
         aodTimeoutScheduled = false
+        aodTimedOut = true  // 封鎖後續 AOD 事件，直到螢幕喚醒才解除
         stopMarquee()
         turnOffLights()
     }
@@ -266,6 +271,11 @@ class MarqueeService : Service() {
     }
 
     private fun triggerAodAnimation() {
+        if (aodTimedOut) {
+            // timeout 已觸發，封鎖後續 AOD 事件，等待螢幕喚醒後的下次 AOD session
+            Log.d(TAG, "AOD Event suppressed (timeout reached this session)")
+            return
+        }
         isRunning = false
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
