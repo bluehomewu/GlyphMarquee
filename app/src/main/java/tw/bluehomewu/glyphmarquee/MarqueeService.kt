@@ -1,9 +1,11 @@
 package tw.bluehomewu.glyphmarquee
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -51,6 +53,21 @@ class MarqueeService : Service() {
     private val lock = Any()
 
     private var isBoundBySystem = false
+
+    // 監聽螢幕亮起，重置 AOD timeout 狀態以便下次休眠時正常執行
+    // onUnbind 並不會在每次螢幕喚醒時觸發（Nothing 系統保持 service 持續綁定），
+    // 所以必須靠 ACTION_SCREEN_ON 來偵測「使用者喚醒螢幕」這個事件
+    private val screenOnReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_ON) {
+                Log.d(TAG, "Screen ON - resetting AOD timeout state for next sleep")
+                aodTimedOut = false
+                aodTimeoutScheduled = false
+                handler.removeCallbacks(aodTimeoutRunnable)
+                stopMarquee()
+            }
+        }
+    }
 
     // AOD 訊息處理器
     private val serviceHandler = object : Handler(Looper.getMainLooper()) {
@@ -102,6 +119,7 @@ class MarqueeService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        registerReceiver(screenOnReceiver, IntentFilter(Intent.ACTION_SCREEN_ON))
         try {
             glyphManager = GlyphMatrixManager.getInstance(applicationContext)
             glyphManager.init(callback)
@@ -166,6 +184,7 @@ class MarqueeService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        try { unregisterReceiver(screenOnReceiver) } catch (e: Exception) {}
         handler.removeCallbacksAndMessages(null)
         turnOffLights()
         try {
