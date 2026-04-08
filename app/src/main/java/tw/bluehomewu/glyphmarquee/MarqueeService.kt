@@ -35,6 +35,8 @@ class MarqueeService : Service() {
     private var updateSpeed = 100L
     private var brightness = 255
     private var direction = 0 // 0:Left, 1:Right, 2:Up, 3:Down
+    // aodTimeoutMinutes == 0 表示永遠顯示
+    private var aodTimeoutMinutes = 0
 
     // 裝置矩陣尺寸（Phone (3) = 25, Phone (4a) Pro = 13）
     private var matrixLength = 25
@@ -148,8 +150,12 @@ class MarqueeService : Service() {
         textToScroll = prefs.getString("text", defaultText) ?: " ERROR "
         updateSpeed = prefs.getInt("speed", 100).toLong()
         brightness = prefs.getInt("brightness", 255)
-        // 讀取方向
         direction = prefs.getInt("direction", 0)
+
+        // aod_timeout_index: 0→1min, 1→2min, 2→5min, 3→10min, 4→30min, 5→0(forever)
+        val timeoutIndex = prefs.getInt("aod_timeout_index", 5)
+        val timeoutOptions = intArrayOf(1, 2, 5, 10, 30, 0)
+        aodTimeoutMinutes = timeoutOptions.getOrElse(timeoutIndex) { 0 }
 
         synchronized(lock) {
             scrollOffset = 0
@@ -237,17 +243,28 @@ class MarqueeService : Service() {
         Log.d(TAG, "Bitmap Updated for AOD/Normal. Dir=$direction, MatrixLength=$matrixLength")
     }
 
+    // AOD 計時關閉：時間到停止動畫並熄燈
+    private val aodTimeoutRunnable = Runnable {
+        Log.d(TAG, "AOD timeout reached, stopping animation")
+        stopMarquee()
+        turnOffLights()
+    }
+
     // 延遲啟動，讓系統在 AOD 過渡期穩定後再開始動畫
     private val aodStartRunnable = Runnable {
         Log.d(TAG, "Starting AOD Sequence")
         isRunning = true
         handler.post(marqueeRunnable)
+        if (aodTimeoutMinutes > 0) {
+            handler.postDelayed(aodTimeoutRunnable, aodTimeoutMinutes * 60 * 1000L)
+        }
     }
 
     private fun triggerAodAnimation() {
         isRunning = false
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
+        handler.removeCallbacks(aodTimeoutRunnable)
         Log.d(TAG, "AOD Event: queuing animation start (200ms delay)")
         handler.postDelayed(aodStartRunnable, 200)
     }
@@ -307,7 +324,6 @@ class MarqueeService : Service() {
                         if (scrollOffset > 1000000) scrollOffset = 0
                     }
                 }
-
             } catch (e: Exception) {
                 Log.e(TAG, "Animation Error: ${e.message}")
             } finally {
@@ -332,5 +348,6 @@ class MarqueeService : Service() {
         isRunning = false
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
+        handler.removeCallbacks(aodTimeoutRunnable)
     }
 }

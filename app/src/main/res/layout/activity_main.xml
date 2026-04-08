@@ -95,6 +95,21 @@
         android:layout_marginTop="8dp"
         android:minHeight="48dp"/>
 
+    <!-- AOD 自動關閉 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/aod_timeout_label"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="start"/>
+
+    <Spinner
+        android:id="@+id/spAodTimeout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minHeight="48dp"/>
+
     <!-- 套用按鈕 -->
     <Button
         android:id="@+id/btnApply"

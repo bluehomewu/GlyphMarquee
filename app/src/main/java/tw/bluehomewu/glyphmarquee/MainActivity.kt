@@ -41,10 +41,11 @@ class MainActivity : AppCompatActivity() {
 
         // 新增 Spinner 參考
         val spDirection = findViewById<Spinner>(R.id.spDirection)
+        val spAodTimeout = findViewById<Spinner>(R.id.spAodTimeout)
 
         val btnApply = findViewById<Button>(R.id.btnApply)
 
-        // 設定 Spinner 的內容 (讀取 strings.xml 裡的陣列)
+        // 設定方向 Spinner
         ArrayAdapter.createFromResource(
             this,
             R.array.directions,
@@ -52,6 +53,16 @@ class MainActivity : AppCompatActivity() {
         ).also { adapter ->
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spDirection.adapter = adapter
+        }
+
+        // 設定 AOD 計時關閉 Spinner
+        ArrayAdapter.createFromResource(
+            this,
+            R.array.aod_timeout_options,
+            android.R.layout.simple_spinner_item
+        ).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spAodTimeout.adapter = adapter
         }
 
         // 1. 讀取儲存的設定
@@ -74,6 +85,10 @@ class MainActivity : AppCompatActivity() {
         // 讀取方向 (預設 0 = Left)
         val savedDirection = prefs.getInt("direction", 0)
         spDirection.setSelection(savedDirection)
+
+        // 讀取 AOD 計時關閉 (預設 5 = 永遠顯示)
+        val savedAodTimeoutIndex = prefs.getInt("aod_timeout_index", 5)
+        spAodTimeout.setSelection(savedAodTimeoutIndex)
 
         // 2. 拉桿監聽器
         sbSpeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -105,12 +120,16 @@ class MainActivity : AppCompatActivity() {
             // 取得選中的方向 (Index)
             val newDirection = spDirection.selectedItemPosition
 
+            // 取得 AOD 計時關閉 Index
+            val newAodTimeoutIndex = spAodTimeout.selectedItemPosition
+
             // 儲存設定
             prefs.edit().apply {
                 putString("text", newText)
                 putInt("speed", newSpeed)
                 putInt("brightness", newBrightness)
-                putInt("direction", newDirection) // 儲存方向
+                putInt("direction", newDirection)
+                putInt("aod_timeout_index", newAodTimeoutIndex)
                 apply()
             }
 

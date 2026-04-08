@@ -30,6 +30,17 @@
         <item>向下</item>
     </string-array>
 
+    <!-- AOD 自動關閉 -->
+    <string name="aod_timeout_label">AOD 自動關閉時間</string>
+    <string-array name="aod_timeout_options">
+        <item>1 分鐘後關閉</item>
+        <item>2 分鐘後關閉</item>
+        <item>5 分鐘後關閉</item>
+        <item>10 分鐘後關閉</item>
+        <item>30 分鐘後關閉</item>
+        <item>永遠顯示</item>
+    </string-array>
+
     <!-- Author Info -->
     <string name="author_info">作者: Edward Wu\nGitHub: @bluehomewu</string>
     <string name="visit_github">前往 GitHub 查看</string>

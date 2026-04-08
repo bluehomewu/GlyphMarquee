@@ -30,6 +30,17 @@
         <item>Down</item>
     </string-array>
 
+    <!-- AOD Timeout -->
+    <string name="aod_timeout_label">AOD Auto-Off After</string>
+    <string-array name="aod_timeout_options">
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>30 minutes</item>
+        <item>Forever (Always On)</item>
+    </string-array>
+
     <!-- Author Info -->
     <string name="author_info">Author: Edward Wu\nGitHub: @bluehomewu</string>
     <string name="visit_github">View on GitHub</string>
