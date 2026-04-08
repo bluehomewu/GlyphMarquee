@@ -65,11 +65,6 @@ class MarqueeService : Service() {
 
                 if (aodEvent == event) {
                     Log.d(TAG, "Received AOD Event - Triggering Animation")
-
-                    // 1. 強制從 SharedPreferences 重新讀取最新的方向、文字、亮度
-                    loadSettings()
-
-                    // 2. 觸發動畫
                     triggerAodAnimation()
                 }
             }
@@ -276,6 +271,13 @@ class MarqueeService : Service() {
             Log.d(TAG, "AOD Event suppressed (timeout reached this session)")
             return
         }
+        if (aodTimeoutScheduled) {
+            // 計時器已在倒數、動畫正常執行中，不重啟（避免 scroll 跳回開頭）
+            Log.d(TAG, "AOD Event: animation running with countdown, skipping restart")
+            return
+        }
+        // 只在真正需要啟動時才重新讀取設定，避免 loadSettings() 重置 scrollOffset 中斷動畫
+        loadSettings()
         isRunning = false
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
