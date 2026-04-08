@@ -37,6 +37,8 @@ class MarqueeService : Service() {
     private var direction = 0 // 0:Left, 1:Right, 2:Up, 3:Down
     // aodTimeoutMinutes == 0 表示永遠顯示
     private var aodTimeoutMinutes = 0
+    // 防止 AOD 重複事件不斷重置計時器
+    private var aodTimeoutScheduled = false
 
     // 裝置矩陣尺寸（Phone (3) = 25, Phone (4a) Pro = 13）
     private var matrixLength = 25
@@ -246,6 +248,7 @@ class MarqueeService : Service() {
     // AOD 計時關閉：時間到停止動畫並熄燈
     private val aodTimeoutRunnable = Runnable {
         Log.d(TAG, "AOD timeout reached, stopping animation")
+        aodTimeoutScheduled = false
         stopMarquee()
         turnOffLights()
     }
@@ -255,7 +258,9 @@ class MarqueeService : Service() {
         Log.d(TAG, "Starting AOD Sequence")
         isRunning = true
         handler.post(marqueeRunnable)
-        if (aodTimeoutMinutes > 0) {
+        // 只在計時器尚未啟動時才排程，避免 AOD 重複事件不斷重置計時器
+        if (aodTimeoutMinutes > 0 && !aodTimeoutScheduled) {
+            aodTimeoutScheduled = true
             handler.postDelayed(aodTimeoutRunnable, aodTimeoutMinutes * 60 * 1000L)
         }
     }
@@ -264,7 +269,7 @@ class MarqueeService : Service() {
         isRunning = false
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
-        handler.removeCallbacks(aodTimeoutRunnable)
+        // 不取消 aodTimeoutRunnable：保留跨越 AOD 重複事件的計時器倒數
         Log.d(TAG, "AOD Event: queuing animation start (200ms delay)")
         handler.postDelayed(aodStartRunnable, 200)
     }
@@ -349,5 +354,6 @@ class MarqueeService : Service() {
         handler.removeCallbacks(marqueeRunnable)
         handler.removeCallbacks(aodStartRunnable)
         handler.removeCallbacks(aodTimeoutRunnable)
+        aodTimeoutScheduled = false
     }
 }
