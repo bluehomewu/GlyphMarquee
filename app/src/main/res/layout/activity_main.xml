@@ -98,9 +98,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:value="100"
-                    app:labelBehavior="gone"
-                    app:valueFrom="10"
-                    app:valueTo="200" />
+                    android:valueFrom="10"
+                    android:valueTo="200"
+                    app:labelBehavior="gone" />
 
                 <com.google.android.material.divider.MaterialDivider
                     android:layout_width="match_parent"
@@ -138,9 +138,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:value="255"
-                    app:labelBehavior="gone"
-                    app:valueFrom="1"
-                    app:valueTo="255" />
+                    android:valueFrom="1"
+                    android:valueTo="255"
+                    app:labelBehavior="gone" />
 
                 <com.google.android.material.divider.MaterialDivider
                     android:layout_width="match_parent"
