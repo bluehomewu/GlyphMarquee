@@ -4,6 +4,7 @@
 
     <!-- UI Strings -->
     <string name="editor_title">Glyph 跑馬燈編輯器</string>
+    <string name="editor_subtitle">LED 顯示設定</string>
     <string name="input_hint">輸入跑馬燈文字</string>
     <string name="default_marquee_text">HELLO NOTHING (3) </string>
     <string name="default_marquee_text_4a_pro">HELLO NOTHING (4a) Pro </string>

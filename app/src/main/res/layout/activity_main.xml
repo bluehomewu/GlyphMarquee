@@ -1,184 +1,255 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"> <!-- 改為水平置中，垂直由 weight 控制 -->
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/editor_title"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="50dp"
-        android:layout_marginTop="64dp"/>
-
-    <!-- 文字輸入框 -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilMarqueeText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/input_hint"
-        app:helperTextEnabled="true">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etMarqueeText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/default_marquee_text"
-            android:singleLine="true"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- 速度控制 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/speed_label"
-        android:layout_marginTop="24dp"
-        android:layout_gravity="start"/>
-
-    <SeekBar
-        android:id="@+id/sbSpeed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:max="200"
-        android:min="10"
-        android:progress="100"/>
-
-    <TextView
-        android:id="@+id/tvSpeedValue"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/initial_speed_value"
-        android:layout_gravity="end"/>
-
-    <!-- 亮度控制 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/brightness_label"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="start"/>
-
-    <SeekBar
-        android:id="@+id/sbBrightness"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:max="255"
-        android:min="1"
-        android:progress="255"/>
-
-    <TextView
-        android:id="@+id/tvBrightnessValue"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/initial_brightness_value"
-        android:layout_gravity="end"/>
-
-    <!-- 方向控制 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/direction_label"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="start"/>
-
-    <Spinner
-        android:id="@+id/spDirection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:minHeight="48dp"/>
-
-    <!-- AOD 自動關閉 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/aod_timeout_label"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="start"/>
-
-    <Spinner
-        android:id="@+id/spAodTimeout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:minHeight="48dp"/>
-
-    <!-- 套用按鈕 -->
-    <Button
-        android:id="@+id/btnApply"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_apply"
-        android:layout_marginTop="24dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/warning_text"
-        android:gravity="center"
-        android:textSize="12sp"
-        android:textColor="#888888"
-        android:layout_marginTop="8dp"/>
-
-    <Button
-        android:id="@+id/btnOpenGlyphToys"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_open_glyph_toys"
-        android:layout_marginTop="8dp"/>
-
-    <!-- =========================== -->
-    <!-- 彈簧視圖：把下方的東西推到底部 -->
-    <!-- =========================== -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <!-- =========================== -->
-    <!-- 作者資訊 Footer -->
-    <!-- =========================== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center"
-        android:layout_marginTop="16dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="56dp"
+        android:paddingBottom="32dp">
+
+        <!-- App Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/author_info"
-            android:gravity="center"
-            android:textStyle="bold"
-            android:textColor="#666666"/>
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/editor_subtitle"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <TextView
-            android:id="@+id/tvVersion"
-            android:layout_width="wrap_content"
+        <!-- Text Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilMarqueeText"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="v1.0"
-            android:textSize="12sp"
-            android:textColor="#AAAAAA"
-            android:layout_marginTop="4dp"/>
+            android:hint="@string/input_hint"
+            app:helperTextEnabled="true">
 
-        <!-- 使用 TextButton 風格，比較不搶眼 -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMarqueeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone"
+                android:singleLine="true"
+                android:text="@string/default_marquee_text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Settings Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="16dp">
+
+                <!-- Speed -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/speed_label"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+                    <TextView
+                        android:id="@+id/tvSpeedValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:minWidth="60dp"
+                        android:text="@string/initial_speed_value"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderSpeed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="100"
+                    app:labelBehavior="gone"
+                    app:valueFrom="10"
+                    app:valueTo="200" />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp" />
+
+                <!-- Brightness -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/brightness_label"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+                    <TextView
+                        android:id="@+id/tvBrightnessValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:minWidth="60dp"
+                        android:text="255"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderBrightness"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="255"
+                    app:labelBehavior="gone"
+                    app:valueFrom="1"
+                    app:valueTo="255" />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp" />
+
+                <!-- Direction -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilDirection"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/direction_label">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/actvDirection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        tools:ignore="LabelFor" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- AOD Timeout -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilAodTimeout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="@string/aod_timeout_label">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/actvAodTimeout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        tools:ignore="LabelFor" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Apply Button -->
         <Button
-            android:id="@+id/btnGithub"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
+            android:id="@+id/btnApply"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/visit_github"
-            android:textColor="#2196F3"
-            android:layout_marginTop="4dp"/>
-    </LinearLayout>
+            android:layout_marginTop="20dp"
+            android:text="@string/btn_apply" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/warning_text"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <Button
+            android:id="@+id/btnOpenGlyphToys"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_open_glyph_toys" />
+
+        <!-- Footer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/author_info"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvVersion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="v1.0"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <Button
+                    android:id="@+id/btnGithub"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/visit_github"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
