@@ -65,6 +65,14 @@ class MarqueeService : Service() {
                 aodTimeoutScheduled = false
                 handler.removeCallbacks(aodTimeoutRunnable)
                 stopMarquee()
+                // Phone (3) supports screen-on toy mode. Nothing's system does not always
+                // call onUnbind/onBind on screen wake, so if the service is still bound we
+                // must restart the animation here (Phone (4a) Pro is AOD-only: skip it).
+                if (isBoundBySystem && matrixLength != 13) {
+                    handler.postDelayed({
+                        if (isBoundBySystem && !isRunning) startMarquee()
+                    }, 500)
+                }
             }
         }
     }
