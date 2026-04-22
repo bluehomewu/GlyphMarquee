@@ -1,21 +1,42 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ============================================================
+# GlyphMarquee ProGuard / R8 Rules
+# ============================================================
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve stack trace line numbers for crash debugging
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Nothing / Ketchum SDK ───────────────────────────────────
+# Keep all public API classes so the SDK reflection/JNI bindings
+# remain intact after shrinking.
+-keep class com.nothing.ketchum.** { *; }
+-keep interface com.nothing.ketchum.** { *; }
+-dontwarn com.nothing.ketchum.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── GlyphMatrix SDK (AAR) ───────────────────────────────────
+-keep class com.nothing.glyphmatrix.** { *; }
+-keep interface com.nothing.glyphmatrix.** { *; }
+-dontwarn com.nothing.glyphmatrix.**
+
+# ── Application classes ─────────────────────────────────────
+-keep class tw.bluehomewu.glyphmarquee.** { *; }
+
+# ── Android Service / Activity lifecycle ────────────────────
+-keep public class * extends android.app.Service
+-keep public class * extends android.app.Activity
+-keep public class * extends android.content.BroadcastReceiver
+
+# ── Enum (required for Kotlin enums) ────────────────────────
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# ── Serialisation / SharedPreferences keys ──────────────────
+# (No custom Parcelables at the moment; add if introduced later)
+
+# ── Kotlin metadata (needed for reflection & coroutines) ────
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.**
+-dontwarn kotlinx.**
