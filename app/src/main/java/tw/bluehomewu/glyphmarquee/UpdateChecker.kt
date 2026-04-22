@@ -21,10 +21,30 @@ object UpdateChecker {
 
     private val client = OkHttpClient()
 
+    /** Fetch latest release unconditionally (for manual changelog tap). */
     fun fetchLatestRelease(
         onSuccess: (ReleaseInfo) -> Unit,
         onError: (String) -> Unit
-    ) {
+    ) = fetch(onSuccess, onError)
+
+    /**
+     * Fetch and only call [onSuccess] when remote is NEWER than [localTag].
+     * Used for silent startup check — no callbacks on error or same/older version.
+     */
+    fun checkForUpdate(localTag: String, onNewVersion: (ReleaseInfo) -> Unit) {
+        fetch(
+            onSuccess = { info ->
+                if (isNewer(localTag, info.tagName)) onNewVersion(info)
+            },
+            onError = { /* silent on startup */ }
+        )
+    }
+
+    fun isNewer(local: String, remote: String): Boolean = compareVersions(local, remote) > 0
+
+    // ── Internal ─────────────────────────────────────────────────────────
+
+    private fun fetch(onSuccess: (ReleaseInfo) -> Unit, onError: (String) -> Unit) {
         val request = Request.Builder()
             .url(API_URL)
             .header("Accept", "application/vnd.github+json")
@@ -51,14 +71,12 @@ object UpdateChecker {
                     if (assets != null) {
                         for (i in 0 until assets.length()) {
                             val asset = assets.getJSONObject(i)
-                            val name = asset.optString("name", "")
-                            if (name.endsWith(".apk", ignoreCase = true)) {
+                            if (asset.optString("name", "").endsWith(".apk", ignoreCase = true)) {
                                 apkUrl = asset.getString("browser_download_url")
                                 break
                             }
                         }
                     }
-
                     onSuccess(ReleaseInfo(tagName, releaseBody, apkUrl))
                 } catch (e: Exception) {
                     onError(e.message ?: "Parse error")
@@ -68,41 +86,34 @@ object UpdateChecker {
     }
 
     /**
-     * Returns positive if [remote] > [local] (remote is newer), 0 if equal, negative otherwise.
-     * Handles "-hotfix" (or any suffix): same base + suffix on remote = newer.
+     * Positive = remote is newer, 0 = equal, negative = local is newer.
+     * Same base version with a suffix (e.g. "-hotfix") on remote = newer.
      */
-    fun compareVersions(local: String, remote: String): Int {
-        val (localBase, localSuffix) = splitTag(local)
-        val (remoteBase, remoteSuffix) = splitTag(remote)
-
-        val baseCmp = compareSemanticParts(localBase, remoteBase)
+    private fun compareVersions(local: String, remote: String): Int {
+        val (lb, ls) = splitTag(local)
+        val (rb, rs) = splitTag(remote)
+        val baseCmp = compareSemanticParts(lb, rb)
         if (baseCmp != 0) return baseCmp
-
         return when {
-            localSuffix.isEmpty() && remoteSuffix.isNotEmpty() -> 1
-            localSuffix.isNotEmpty() && remoteSuffix.isEmpty() -> -1
-            else -> remoteSuffix.compareTo(localSuffix)
+            ls.isEmpty() && rs.isNotEmpty() -> 1
+            ls.isNotEmpty() && rs.isEmpty() -> -1
+            else -> rs.compareTo(ls)
         }
     }
 
-    fun isNewer(local: String, remote: String): Boolean = compareVersions(local, remote) > 0
-
     private fun splitTag(tag: String): Pair<String, String> {
-        val stripped = tag.trimStart('v', 'V')
-        val dashIdx = stripped.indexOf('-')
-        return if (dashIdx >= 0) stripped.substring(0, dashIdx) to stripped.substring(dashIdx + 1)
-        else stripped to ""
+        val s = tag.trimStart('v', 'V')
+        val i = s.indexOf('-')
+        return if (i >= 0) s.substring(0, i) to s.substring(i + 1) else s to ""
     }
 
     private fun compareSemanticParts(a: String, b: String): Int {
-        val aParts = a.split(".").map { it.toIntOrNull() ?: 0 }
-        val bParts = b.split(".").map { it.toIntOrNull() ?: 0 }
-        val len = maxOf(aParts.size, bParts.size)
-        for (i in 0 until len) {
-            val diff = bParts.getOrElse(i) { 0 } - aParts.getOrElse(i) { 0 }
+        val ap = a.split(".").map { it.toIntOrNull() ?: 0 }
+        val bp = b.split(".").map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(ap.size, bp.size)) {
+            val diff = bp.getOrElse(i) { 0 } - ap.getOrElse(i) { 0 }
             if (diff != 0) return diff
         }
         return 0
     }
 }
-

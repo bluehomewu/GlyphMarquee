@@ -56,6 +56,7 @@
     <string name="updater_skip">Skip</string>
     <string name="updater_no_apk">No APK available for this release</string>
     <string name="updater_downloading_title">Downloading update…</string>
-    <string name="updater_downloading_message">Please wait, downloading APK…</string>
+    <string name="updater_downloading_message">Preparing download…</string>
+    <string name="updater_download_progress">Downloading… %1$d%%</string>
     <string name="updater_download_failed">Download failed: %1$s</string>
 </resources>

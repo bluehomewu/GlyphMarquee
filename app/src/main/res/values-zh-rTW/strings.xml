@@ -56,6 +56,7 @@
     <string name="updater_skip">略過</string>
     <string name="updater_no_apk">此版本沒有提供 APK 下載</string>
     <string name="updater_downloading_title">下載更新中…</string>
-    <string name="updater_downloading_message">請稍候，正在下載 APK…</string>
+    <string name="updater_downloading_message">準備下載中…</string>
+    <string name="updater_download_progress">下載中… %1$d%%</string>
     <string name="updater_download_failed">下載失敗：%1$s</string>
 </resources>
