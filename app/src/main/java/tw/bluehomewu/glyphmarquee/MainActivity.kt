@@ -5,16 +5,24 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.nothing.ketchum.Common
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
+import io.noties.markwon.ext.tasklist.TaskListPlugin
 
 class MainActivity : AppCompatActivity() {
 
@@ -174,12 +182,91 @@ class MainActivity : AppCompatActivity() {
         }
 
         val tvVersion = findViewById<TextView>(R.id.tvVersion)
+        var currentVersionName = "unknown"
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
-            val versionName = packageInfo.versionName
-            tvVersion.text = "v$versionName"
+            currentVersionName = packageInfo.versionName ?: "unknown"
+            tvVersion.text = "v$currentVersionName"
         } catch (e: Exception) {
             tvVersion.text = "Version Unknown"
         }
+
+        // ── Background startup check ──────────────────────────────────────
+        checkForUpdate(currentVersionName, showToastIfUpToDate = false)
+
+        // ── Tap version label to manually check / view release notes ─────
+        tvVersion.setOnClickListener {
+            checkForUpdate(currentVersionName, showToastIfUpToDate = true)
+        }
+    }
+
+    // ── Updater ───────────────────────────────────────────────────────────
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private fun checkForUpdate(localVersion: String, showToastIfUpToDate: Boolean) {
+        // Show "checking" toast only on manual tap
+        if (showToastIfUpToDate) {
+            Toast.makeText(this, getString(R.string.updater_checking), Toast.LENGTH_SHORT).show()
+        }
+
+        UpdateChecker.fetchLatestRelease(
+            onSuccess = { info ->
+                mainHandler.post { showReleaseDialog(localVersion, info) }
+            },
+            onError = { err ->
+                if (showToastIfUpToDate) {
+                    mainHandler.post {
+                        AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.updater_error_title))
+                            .setMessage(getString(R.string.updater_error_message, err))
+                            .setPositiveButton(getString(R.string.updater_close), null)
+                            .show()
+                    }
+                }
+            }
+        )
+    }
+
+    private fun showReleaseDialog(localVersion: String, info: ReleaseInfo) {
+        val isNewer = UpdateChecker.isNewer("v$localVersion", info.tagName)
+
+        val markwon = Markwon.builder(this)
+            .usePlugin(StrikethroughPlugin.create())
+            .usePlugin(TablePlugin.create(this))
+            .usePlugin(TaskListPlugin.create(this))
+            .build()
+
+        // Build dialog content view with scrollable Markwon TextView
+        val scrollView = android.widget.ScrollView(this)
+        val contentTv = TextView(this).apply {
+            setPadding(48, 32, 48, 32)
+            setTextIsSelectable(true)
+        }
+        markwon.setMarkdown(contentTv, info.body.ifBlank { "_No release notes provided._" })
+        scrollView.addView(contentTv)
+
+        val title = if (isNewer)
+            getString(R.string.updater_new_version_title, info.tagName)
+        else
+            getString(R.string.updater_up_to_date_title)
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(scrollView)
+            .setNeutralButton(getString(R.string.updater_close), null)
+
+        if (isNewer) {
+            builder.setPositiveButton(getString(R.string.updater_update)) { _, _ ->
+                if (info.apkDownloadUrl.isBlank()) {
+                    Toast.makeText(this, getString(R.string.updater_no_apk), Toast.LENGTH_LONG).show()
+                } else {
+                    ApkDownloader.downloadAndInstall(this, info.apkDownloadUrl, info.tagName)
+                }
+            }
+            builder.setNegativeButton(getString(R.string.updater_skip), null)
+        }
+
+        builder.show()
     }
 }

@@ -40,3 +40,14 @@
 -keep class kotlin.Metadata { *; }
 -dontwarn kotlin.**
 -dontwarn kotlinx.**
+
+# ── OkHttp ──────────────────────────────────────────────────
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+
+# ── Markwon (Markdown renderer) ─────────────────────────────
+-keep class io.noties.markwon.** { *; }
+-dontwarn io.noties.markwon.**
+
