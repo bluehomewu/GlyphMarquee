@@ -54,6 +54,10 @@ class MarqueeService : Service() {
 
     private var isBoundBySystem = false
 
+    private fun supportsScreenOnToyMode(): Boolean = matrixLength != 13
+
+    private fun shouldUseAppMatrixControl(): Boolean = supportsScreenOnToyMode() && !isBoundBySystem
+
     // 監聽螢幕亮起，重置 AOD timeout 狀態以便下次休眠時正常執行
     // onUnbind 並不會在每次螢幕喚醒時觸發（Nothing 系統保持 service 持續綁定），
     // 所以必須靠 ACTION_SCREEN_ON 來偵測「使用者喚醒螢幕」這個事件
@@ -65,12 +69,16 @@ class MarqueeService : Service() {
                 aodTimeoutScheduled = false
                 handler.removeCallbacks(aodTimeoutRunnable)
                 stopMarquee()
-                // Phone (3) supports screen-on toy mode. Nothing's system does not always
-                // call onUnbind/onBind on screen wake, so if the service is still bound we
-                // must restart the animation here (Phone (4a) Pro is AOD-only: skip it).
-                if (isBoundBySystem && matrixLength != 13) {
+                // Phone (3) supports screen-on toy mode. Newer Nothing system builds do not
+                // always rebind the toy service reliably after screen wake, so restarting only
+                // when isBoundBySystem == true can leave the marquee permanently dark.
+                if (supportsScreenOnToyMode()) {
+                    Log.d(TAG, "Screen ON - scheduling marquee restart for Phone (3) mode")
                     handler.postDelayed({
-                        if (isBoundBySystem && !isRunning) startMarquee()
+                        if (!isRunning) {
+                            loadSettings()
+                            startMarquee()
+                        }
                     }, 500)
                 }
             }
@@ -110,7 +118,7 @@ class MarqueeService : Service() {
                     Thread.sleep(100)
                     loadSettings()
 
-                    if (isBoundBySystem) {
+                    if (isBoundBySystem || supportsScreenOnToyMode()) {
                         handler.post { startMarquee() }
                     }
                 } catch (e: Exception) {
@@ -164,7 +172,7 @@ class MarqueeService : Service() {
         if (intent?.action == "UPDATE_CONFIG") {
             Log.d(TAG, "Config Updated")
             loadSettings()
-            if (!isRunning && isBoundBySystem) {
+            if (!isRunning && (isBoundBySystem || supportsScreenOnToyMode())) {
                 startMarquee()
             }
         }
@@ -207,6 +215,10 @@ class MarqueeService : Service() {
     private fun turnOffLights() {
         try {
             if (::glyphManager.isInitialized) {
+                if (shouldUseAppMatrixControl()) {
+                    glyphManager.closeAppMatrix()
+                    return
+                }
                 val blackBitmap = Bitmap.createBitmap(matrixLength, matrixLength, Bitmap.Config.ARGB_8888)
                 val obj = GlyphMatrixObject.Builder()
                     .setImageSource(blackBitmap)
@@ -217,6 +229,20 @@ class MarqueeService : Service() {
                 glyphManager.setMatrixFrame(frame)
             }
         } catch (e: Exception) {}
+    }
+
+    private fun submitFrame(frame: GlyphMatrixFrame) {
+        if (!::glyphManager.isInitialized) return
+
+        try {
+            if (shouldUseAppMatrixControl()) {
+                glyphManager.setAppMatrixFrame(frame)
+            } else {
+                glyphManager.setMatrixFrame(frame)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Frame submission failed", e)
+        }
     }
 
     private fun prepareTextBitmap() {
@@ -360,9 +386,7 @@ class MarqueeService : Service() {
                             .addTop(obj)
                             .build(applicationContext)
 
-                        if (::glyphManager.isInitialized) {
-                            glyphManager.setMatrixFrame(frame)
-                        }
+                        submitFrame(frame)
 
                         scrollOffset += 1
                         if (scrollOffset > 1000000) scrollOffset = 0

@@ -2,7 +2,7 @@
 
 > 🌐 **Language / 語言**：English | [繁體中文](README_zhTW.md)
 
-![Version](https://img.shields.io/badge/Version-v1.5.0-blue)
+![Version](https://img.shields.io/badge/Version-v1.5.2-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Device](https://img.shields.io/badge/Device-Nothing_Phone_(3)_|_Phone_(4a)_Pro-red)
 ![SDK](https://img.shields.io/badge/GlyphMatrix_SDK-2.0-orange)
@@ -115,6 +115,9 @@ Turns the LED dot-matrix panel on the back of your phone into a fully customisab
     *   `NothingKey`: SDK licence key.
 
 ## 📦 Changelog
+
+### v1.5.2
+*   **Fix**: Restore Nothing Phone (3) screen-on marquee behavior by recovering the animation after screen wake and using app-matrix rendering when the system does not rebind the toy service.
 
 ### v1.5.0
 *   **New**: Professional UI redesign — `NestedScrollView` layout, `MaterialCardView` settings group, Material3 `Slider` replacing `SeekBar`, `ExposedDropdownMenu` replacing `Spinner`, `MaterialDivider` dividers, all hardcoded colours replaced with theme attributes.

@@ -2,7 +2,7 @@
 
 > 🌐 **語言 / Language**：[English](README.md) | 繁體中文
 
-![Version](https://img.shields.io/badge/Version-v1.5.0-blue)
+![Version](https://img.shields.io/badge/Version-v1.5.2-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Device](https://img.shields.io/badge/Device-Nothing_Phone_(3)_|_Phone_(4a)_Pro-red)
 ![SDK](https://img.shields.io/badge/GlyphMatrix_SDK-2.0-orange)
@@ -115,6 +115,9 @@
     *   `NothingKey`：SDK 授權金鑰。
 
 ## 📦 版本記錄 (Changelog)
+
+### v1.5.2
+*   **修正**：恢復 Nothing Phone (3) 的亮屏跑馬燈行為；螢幕喚醒後重新接續動畫，並在系統未重新綁定 toy service 時改走 app-matrix 顯示路徑。
 
 ### v1.3.0
 *   **新增**：AOD 計時自動關閉（1 / 2 / 5 / 10 / 30 分鐘或永遠顯示），節省電量；下次喚醒螢幕後重新進入 AOD 時會重新執行。
